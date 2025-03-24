@@ -16,6 +16,7 @@ Options:
  -y|--yes			Automatically answer "y" to acknowledge the
  				warning prompt that this tool will use a lot of
 				network and disk
+ --use-https			Use HTTPS instead of SSH for GitHub repositories
 
 IMAGE:		Image name, as: cgr.dev/chainguard/python:latest
 		Default tag=:latest if unspecified
@@ -192,8 +193,12 @@ git_checkout() {
 		pkg:github/*)
 			# Strip the leading data and extract the repo name (before the commit hash)
 			repo=$(echo "$ref" | sed -e "s|^pkg:github/||" -e "s/@.*$//")
-			# Fully qualify the git URL and use git over ssh for authentication to private repos
-			repo="git@github.com:$repo"
+			# Choose between HTTPS and SSH based on the --use-https option
+			if [ "$USE_HTTPS" = "1" ]; then
+				repo="https://github.com/$repo"
+			else
+				repo="git@github.com:$repo"
+			fi
 		;;
 		*)
 			# Extract the repo name (before the commit hash)
@@ -280,6 +285,7 @@ ARCH="amd64"
 SOURCES_DIR="$(pwd)/sources"
 mkdir -p "$SOURCES_DIR"
 WORK_DIR=
+USE_HTTPS=0
 
 # Handle command line options
 while [ ! -z "$1" ]; do
@@ -311,6 +317,10 @@ while [ ! -z "$1" ]; do
 		;;
 		-y|--yes)
 			YES=1
+			shift
+		;;
+		--use-https)
+			USE_HTTPS=1
 			shift
 		;;
 		*)
